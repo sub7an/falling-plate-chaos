@@ -1,0 +1,25 @@
+# model_params.yaml — physical coefficients for the APW thin-card model.
+#
+# Physics ONLY from docs/model_spec.md. Every value below is transcribed from the
+# spec's parameter table (§5), which traces each to [P91] (Andersen, Pesavento &
+# Wang 2005, J. Fluid Mech. 541, 91-104). No coefficient is invented here or in
+# model.py. Structural constants (2/pi, 1/pi, 1/4, 1/2) in the equations are NOT
+# parameters and live in the equation forms, not here.
+#
+# Thin-card limit (beta = b/a -> 0): eqs (5.1)-(5.3) with closures (4.7)-(4.9).
+
+# Aerodynamic coefficients (spec §5; [P91 §5.2], attributed to Wang et al. 2004)
+C_T: 1.2       # translational-drag / lift closure (4.7)
+C_R: 3.141592653589793   # = pi ; rotational-lift closure (4.7)
+A:   1.4       # fluid-force closure (4.8)
+B:   1.0       # fluid-force closure (4.8)
+
+# Dissipative rotational-torque coefficients (spec §5; [P91 §3.3, §5.2]).
+# Chosen by the authors for qualitatively correct flutter/tumble; not fitted.
+mu1: 0.2       # torque closure (4.9)
+mu2: 0.2       # torque closure (4.9)
+
+# Control parameter I* = rho_s * b / (rho_f * a)  (spec §3).
+# Varied per experiment; the value here is the heteroclinic anchor I*_C
+# (spec §7 anchor 3) and is OVERRIDDEN by experiment configs / tests.
+I_star: 1.2191

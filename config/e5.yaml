@@ -1,0 +1,48 @@
+# E5 — landing-displacement sensitivity (PLAN §5-E5). Runs in the E2-confirmed
+# chaotic band [1.63, 2.83] with regular controls. Displacement is an unbounded
+# running sum: expect an exponential (Lyapunov) phase, log sigma ~ log sigma0 +
+# (lambda_max/U) D, then diffusive ~sqrt(D) (chaotic) or bounded/linear (regular).
+
+experiment: e5_sensitivity
+seed: 20260922
+model_config: config/model_params.yaml
+
+istar: [1.1, 1.4, 2.0, 2.2, 2.5]     # regular controls (1.1,1.4) + chaotic band (2.0,2.2,2.5)
+chaotic_band: [1.63, 2.83]            # from E2 gate
+
+ensemble:
+  ic: [0.0, 0.01, 0.5, 0.0]           # reduced IC (vx', vy', theta, omega); spec §7
+  n_members: 200
+  delta0: 1.0e-6                       # small so the exponential phase spans several decades
+  graze_tol: 1.0e-3
+
+integrator:
+  method: DOP853
+  rtol: 1.0e-10
+  atol: 1.0e-12
+  T: 350.0
+  dt: 0.05
+
+depths:
+  start: 2.0
+  stop: 200.0
+  num: 60
+
+lyapunov:                              # lambda_max for the lambda_max/U comparison
+  method: DOP853
+  rtol: 1.0e-10
+  atol: 1.0e-12
+  dt_renorm: 0.5
+  t_transient: 150.0
+  t_total: 4000.0     # better-converged lambda_max for the slope comparison (T=2000 runs ~3% high)
+
+fit:
+  min_growth_ratio: 1000.0             # sigma_max/sigma_min below this => "bounded" (regular).
+                                       # chaotic ~1e6-1e7, regular ~30 (noise): clean separation.
+  sat_frac: 0.3                        # exp phase = depths where sigma < sat_frac * sigma_final
+
+sweep:
+  n_jobs: -1
+
+outputs:
+  figure: figures/e5_sensitivity.png

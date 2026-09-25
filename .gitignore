@@ -1,0 +1,36 @@
+# venv
+.venv/
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# generated outputs (regenerable via run_all.py; kept out of git)
+data/*
+!data/.gitkeep
+figures/*
+!figures/.gitkeep
+
+# latex build artifacts (paper.pdf regenerable via `make paper`)
+docs/*.aux
+docs/*.log
+docs/*.out
+docs/*.fls
+docs/*.fdb_latexmk
+docs/*.pdf
+
+# generated submission package (`make arxiv`)
+docs/arxiv/
+docs/paper-arxiv.zip
+
+# os
+.DS_Store
+
+# local tooling / editor settings (machine-specific)
+.claude/
+
+# reference PDFs (copyrighted; keep locally, not in git)
+references/*.pdf
+CLAUDE.md

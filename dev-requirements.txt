@@ -1,0 +1,7 @@
+# Analysis / tooling ONLY — not project runtime dependencies.
+# These are used for one-off tasks (e.g. rendering reference PDF pages during the
+# spec second-reader check). Do NOT import these from the fallingplate package or
+# experiments. Runtime deps live in requirements.txt.
+#
+# Install (optional): pip install -r dev-requirements.txt
+pymupdf==1.28.2

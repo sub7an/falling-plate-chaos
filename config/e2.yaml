@@ -1,0 +1,46 @@
+# E2 — Lyapunov vs I* (PLAN §5-E2). THE CHAOS GATE. No magic numbers in code.
+
+experiment: e2_lyapunov
+seed: 20260922
+model_config: config/model_params.yaml
+e1_config: config/e1.yaml      # bifurcation backdrop for the overlay figure
+
+istar_sweep:
+  start: 1.0
+  stop: 3.0
+  num: 36            # denser than a coarse scan; covers all bands + the candidate
+
+trajectory:
+  ic: [0.0, 0.01, 0.5, 0.0]   # spec §7 tilted IC
+
+lyapunov:
+  # variational (tangent-linear + QR), analytic Jacobian. lambda_max = k=1.
+  method: DOP853
+  rtol: 1.0e-10
+  atol: 1.0e-12
+  dt_renorm: 0.5
+  t_transient: 150.0
+  t_long: 2500.0     # primary estimate (converged in the chaotic band per M3)
+  t_short: 1250.0    # uncertainty = |lambda(t_long) - lambda(t_short)|
+
+zero_one:
+  # 0-1 test cross-check on omega sampled at the theta=0 Poincare section
+  # (stroboscopic, NOT the fine step, which biases K high).
+  method: DOP853
+  rtol: 1.0e-10
+  atol: 1.0e-12
+  max_step: 1.0
+  T: 6000.0
+  transient: 1000.0
+  n_c: 100           # random c values; report the median K
+  chaotic_K: 0.5     # K above this => 0-1 test calls it chaotic
+
+sweep:
+  n_jobs: -1
+
+gate:
+  # a point is chaos-CONFIRMED if lambda_max - uncertainty > lam_pos AND K > chaotic_K
+  lam_pos: 0.0
+
+outputs:
+  figure: figures/e2_lyapunov.png

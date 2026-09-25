@@ -1,0 +1,38 @@
+# E1 — regime map vs I* (PLAN §5-E1). Coarse-before-fine. No magic numbers in
+# code: all knobs live here. Physics coefficients live in config/model_params.yaml.
+
+experiment: e1_regime_map
+seed: 20260922
+model_config: config/model_params.yaml
+
+# I* sweep. Range covers all spec §7 anchors (flutter ~1.1, flutter/tumble
+# transition ~1.2191, period-doubling ~1.474, chaos ~1.8-2.8, broadside flutter 3.0).
+istar_sweep:
+  start: 1.0
+  stop: 3.0
+  num: 41            # coarse grid; refine once near label transitions
+
+integrator:
+  method: DOP853
+  rtol: 1.0e-10
+  atol: 1.0e-12
+  max_step: 1.0      # guard against stepping over a Poincare event
+
+trajectory:
+  ic: [0.0, 0.01, 0.5, 0.0]   # spec §7 tilted IC
+  T: 1200.0
+  transient: 300.0            # discard (away from the noise-sensitive heteroclinic)
+  dt: 0.05                    # sampling for regime statistics (section uses events, not dt)
+  keep: 40                    # section points retained per I* for the diagram
+
+section:
+  # theta = 0 (mod 2pi): crossed by BOTH fluttering (about broadside) and tumbling,
+  # so the bifurcation diagram is populated in every band. Event g = sin(theta/2).
+  phase: 0.0
+
+sweep:
+  n_jobs: -1         # all cores
+  refine: true       # one adaptive pass adding midpoints where the label changes
+
+outputs:
+  figure: figures/e1_regime_map.png

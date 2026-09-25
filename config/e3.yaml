@@ -1,0 +1,46 @@
+# E3 — route to chaos (PLAN §5-E3). Characterize the period-2 -> chaos transition.
+# Runs ONLY because E2 confirmed chaos. Determines whether E4 (Feigenbaum) is
+# warranted: a Feigenbaum test needs >=3 SUCCESSIVE period-doublings, established
+# here, not assumed.
+
+experiment: e3_route
+seed: 20260922
+model_config: config/model_params.yaml
+
+istar_sweep:
+  start: 1.45
+  stop: 1.62
+  num: 86            # fine zoom over the single-doubling + transition window
+
+trajectory:
+  ic: [0.0, 0.01, 0.5, 0.0]
+
+section:
+  phase: 3.141592653589793   # theta = pi (mod 2pi); event g = cos(theta/2)
+
+integrator:
+  method: DOP853
+  rtol: 1.0e-12
+  atol: 1.0e-14
+  max_step: 1.0
+  T: 5000.0
+  transient: 3000.0
+  keep: 96           # section points retained per I* (period up to ~16)
+
+lyapunov:
+  method: DOP853
+  rtol: 1.0e-10
+  atol: 1.0e-12
+  dt_renorm: 0.5
+  t_transient: 150.0
+  t_total: 2000.0
+
+period:
+  cluster_tol: 5.0e-4   # absolute omega gap to separate section branches
+  cap: 16               # > cap distinct branches => aperiodic/chaotic
+
+sweep:
+  n_jobs: -1
+
+outputs:
+  figure: figures/e3_route.png

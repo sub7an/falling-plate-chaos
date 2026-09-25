@@ -1,0 +1,429 @@
+\documentclass[11pt]{article}
+
+% --- packages (dependency-light; compiles with tectonic or a standard TeX install) ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[margin=1in]{geometry}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+
+\graphicspath{{./}{figures/}{../figures/}}   % ./ so a flat arXiv upload (figures beside paper.tex) also builds
+\emergencystretch=3em   % absorb the few tight lines with unbreakable inline-math tuples
+
+\newcommand{\Is}{I^{*}}          % dimensionless moment of inertia
+\newcommand{\lmax}{\lambda_{\max}}
+
+\title{\bfseries Chaos, its route, and displacement sensitivity\\
+in the quasi-steady falling-plate model}
+
+\author{M.\ Subhan Rao\\[2pt]
+\small Independent researcher\\[1pt]
+\small ORCID: \href{https://orcid.org/0009-0004-4547-141X}{0009-0004-4547-141X}}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+We study the two-dimensional quasi-steady ``falling-card'' model of Andersen, Pesavento \& Wang
+(2005) in its thin-card limit, treating the dimensionless moment of inertia $\Is$ as a single control
+parameter and asking whether, where, and by what route the model becomes chaotic, and how sensitive
+the horizontal landing position is to release conditions. Using a validated numerical pipeline---a
+variational (tangent-linear) Lyapunov solver cross-checked against Benettin's method and the
+Gottwald--Melbourne 0--1 test, all verified first on the logistic map and the Lorenz system---we
+confirm a chaotic band at $\Is \approx [1.63, 2.83]$, with maximal Lyapunov exponent $\lmax$ peaking
+at $+0.140$ near $\Is=2.2$, consistent with the value $0.13\pm0.01$ reported in the source paper. The
+route into chaos is \emph{not} a Feigenbaum period-doubling cascade: only two successive doublings
+occur before the period-two orbit gives way, through a narrow band threaded with periodic windows, to
+chaos; power spectra rule out a quasiperiodic (torus) route. Within the chaotic band the standard
+deviation of horizontal landing displacement across an ensemble of perturbed release conditions grows
+exponentially, at a rate equal to $\lmax$ within estimation uncertainty; outside the band it is
+insensitive. Up/down continuation and basin sampling reveal no hysteresis and no non-trivial
+multistability. We report one discrepancy with the source paper's figure: at $\Is=1.45$ this model
+tumbles with period one, not period two. All findings are properties of the phenomenological model,
+not of physical falling objects.
+
+\medskip
+\noindent\textbf{Keywords:} falling plate; fluttering; tumbling; deterministic chaos; Lyapunov
+exponent; 0--1 test; route to chaos; sensitive dependence.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+Freely falling plates, cards, leaves, and disks display a well-known sequence of descent styles---
+steady descent, side-to-side fluttering, end-over-end tumbling, and irregular motion---that has been
+documented for disks~\cite{willmarth64,field97}, strips and cards~\cite{belmonte98,mahadevan99}, and
+in direct numerical simulation~\cite{pw04}. Field et al.~\cite{field97} demonstrated genuinely
+chaotic dynamics of falling disks, and Belmonte et al.~\cite{belmonte98} mapped the flutter-to-tumble
+transition through a Froude-like control parameter. Andersen, Pesavento \& Wang (hereafter
+APW)~\cite{apw91,apw65} distilled the two-dimensional dynamics into a low-dimensional quasi-steady
+ordinary-differential-equation model in which the fluid forces enter through translational and
+rotational drag and a circulatory (``lift'') term, with coefficients fixed from direct force
+measurements~\cite{wbd04}. As the dimensionless moment of inertia $\Is$ is varied, the model
+reproduces the observed flutter--tumble sequence, and APW reported a chaotic regime with a positive
+Lyapunov exponent.
+
+This paper revisits the model as a dynamical system in its own right. Our aims are (i)~to confirm,
+with independent diagnostics and pre-verified code, whether a chaotic regime exists and to delimit it;
+(ii)~to characterise the \emph{route} by which chaos appears as $\Is$ increases, testing---rather than
+assuming---the hypothesis of Feigenbaum period-doubling scaling~\cite{feigenbaum78}; and (iii)~to
+quantify the sensitivity of the horizontal landing position to release conditions and connect it to
+the Lyapunov exponent. Throughout we treat null and negative results as first-class outcomes: a chaos
+claim requires a positive Lyapunov exponent \emph{and} an independent confirmation, and a Feigenbaum
+analysis is undertaken only if a genuine doubling cascade is resolved.
+
+\paragraph{Contributions.} Relative to the original model study, this paper (i)~independently confirms
+the chaotic regime with two methods---a variational Lyapunov exponent and the 0--1 test---and
+delimits it to $\Is\in[1.63,2.83]$; (ii)~resolves the route to chaos, showing it is \emph{not} a
+Feigenbaum cascade (only two successive doublings occur) and \emph{not} quasiperiodic; (iii)~
+establishes a quantitative link between the Lyapunov exponent and the exponential growth of
+landing-position sensitivity; (iv)~reports the absence of hysteresis and of non-trivial
+multistability; and (v)~documents a period discrepancy at $\Is=1.45$. All diagnostics are verified on
+standard test systems beforehand, and every result is reproducible from a single command.
+
+All findings are properties of this phenomenological model. Its coefficients were tuned by APW for
+qualitatively correct behaviour and are not fitted to any specific object; the quasi-steady, purely
+two-dimensional closure has a limited range of validity. We therefore make no claim about physical
+falling bodies. The complete code, configurations, cached data, and the sources of this manuscript
+are openly available (Section~\ref{sec:availability}), and every figure and number below is
+regenerated by a single command.
+
+\section{Model}\label{sec:model}
+
+We use the dimensionless thin-card limit ($\beta=b/a\to0$, with $a,b$ the semi-axes) of APW,
+equations (5.1)--(5.3) with closures (4.7)--(4.9)~\cite{apw91}. Length is scaled by the semi-major
+axis $a$, velocity by $U=\sqrt{(\rho_s/\rho_f-1)\,g\,b}$, and time by $a/U$; here $\rho_s,\rho_f$ are
+the solid and fluid densities and $g$ is gravity. The control parameter is $\Is=\rho_s b/(\rho_f a)$.
+The reduced state is $\mathbf{u}=(v_x',v_y',\theta,\omega)$, where $v_x',v_y'$ are the centre-of-mass
+velocity components in the body-fixed (co-rotating) frame, $\theta$ is the card angle (the only cyclic
+coordinate, period $2\pi$), and $\omega=\dot\theta$. The lab-frame position $(x,y)$ follows by
+quadrature and does not feed back into the dynamics (translation invariance),
+\begin{equation}
+\dot x = v_x'\cos\theta - v_y'\sin\theta,\qquad
+\dot y = v_x'\sin\theta + v_y'\cos\theta.
+\end{equation}
+The governing equations are
+\begin{align}
+\Is\,\dot v_x' &= (\Is{+}1)\,\omega v_y' - \Gamma v_y' - \sin\theta - F_x', \\
+(\Is{+}1)\,\dot v_y' &= -\Is\,\omega v_x' + \Gamma v_x' - \cos\theta - F_y', \\
+\tfrac14(\Is{+}\tfrac12)\,\dot\omega &= -v_x' v_y' - \tau, \qquad \dot\theta = \omega,
+\end{align}
+with closures (writing $s=\sqrt{v_x'^2+v_y'^2}$)
+\begin{equation}
+\Gamma = \frac{2}{\pi}\!\left[-C_T\,\frac{v_x' v_y'}{s} + C_R\,\omega\right],\quad
+(F_x',F_y') = \frac{1}{\pi}\!\left[A - B\,\frac{v_x'^2-v_y'^2}{s^2}\right] s\,(v_x',v_y'),\quad
+\tau = (\mu_1+\mu_2|\omega|)\,\omega.
+\end{equation}
+Here $\Gamma$ is the circulation (rotational-lift plus translational term), $\mathbf{F}=(F_x',F_y')$
+the fluid drag/lift force, and $\tau$ the dissipative aerodynamic torque. The coefficients, fixed
+throughout, are $C_T=1.2$, $C_R=\pi$, $A=1.4$, $B=1.0$, and $\mu_1=\mu_2=0.2$~\cite{apw91,wbd04}. The
+direction of $(v_x',v_y')$ is undefined at zero speed; $\Gamma v$ and $\mathbf{F}$ are degree-two
+homogeneous and tend to zero there ($C^1$ but not $C^2$), so admissible initial conditions carry
+non-zero speed. The torque term $|\omega|\omega$ is likewise $C^1$ but not $C^2$ at $\omega=0$.
+
+The model has two families of fixed points: \emph{edge-on} $(\mp V,0,\pi/2\text{ or }3\pi/2,0)$ with
+$V=\sqrt{\pi/(A-B)}\approx2.8025$, and \emph{broadside} $(0,\mp W,0\text{ or }\pi,0)$ with
+$W=\sqrt{\pi/(A+B)}\approx1.1441$. The edge-on points are saddles for all $\Is$; the broadside points
+lose stability through a Hopf bifurcation, and a heteroclinic connection at $\Is_C\approx1.2191$
+mediates the flutter-to-tumble transition.
+
+\section{Numerical methods}\label{sec:methods}
+
+\paragraph{Integration.} Trajectories are integrated with \texttt{scipy.integrate.solve\_ivp} using
+the explicit DOP853 method (adaptive high-order Runge--Kutta) for production runs and RK45 for coarse
+scans. Production tolerances are $\mathrm{rtol}=10^{-10}$, $\mathrm{atol}=10^{-12}$, fixed by a
+tolerance-convergence study (Section~\ref{sec:validation}). Event detection uses the dense output for
+sub-step localisation.
+
+\paragraph{Lyapunov exponents.} The maximal exponent $\lmax$ is computed by the variational
+(tangent-linear) method: the state and a tangent vector are advanced as one augmented system sharing
+identical adaptive steps, with periodic QR reorthonormalisation; $\lmax$ is the time-averaged log
+growth rate. As an independent cross-check we use Benettin's two-trajectory renormalisation
+method~\cite{benettin80}, implemented as a single augmented reference$+$perturbed system (shared
+steps) so that it does not reuse the analytic Jacobian. The uncertainty on $\lmax$ is estimated from
+the spread over averaging times.
+
+\paragraph{Independent chaos test.} We apply the Gottwald--Melbourne 0--1 test~\cite{gm04,gm09} to a
+scalar observable (the angular velocity sampled on a Poincar\'e section, i.e.\ stroboscopically rather
+than at the fine integrator step), reporting the median indicator $K$ over $100$ random frequencies;
+$K\to1$ indicates chaos and $K\to0$ regularity.
+
+\paragraph{Poincar\'e section and period counting.} Because a one-signed tumbling orbit never crosses
+$\omega=0$, we section on the cyclic angle, recording the reduced state at event-located crossings of
+$\theta\equiv\text{const}\,(\mathrm{mod}\,2\pi)$; distinct clustered return points give the period.
+
+\paragraph{Reproducibility.} Every output is content-addressed cached with a provenance sidecar
+recording the git hash, Python/NumPy/SciPy versions, parameters, and seed. The cache key includes a
+hash of the physics/numerics source files, so any change to the model or solvers invalidates dependent
+results. A single command, \texttt{python run\_all.py}, regenerates the entire figure set.
+
+\section{Validation}\label{sec:validation}
+
+No plate result was trusted until a validation ladder passed. \emph{Limiting cases:} with all fluid
+coefficients set to zero the model reduces to constant-acceleration free fall along a principal axis,
+reproduced to $\sim10^{-9}$; the fixed-point residuals vanish to $<10^{-13}$. \emph{Linearisation:}
+the analytic Jacobian agrees with finite differences and, at the heteroclinic value $\Is_C=1.2191$,
+gives the edge-on saddle eigenvalues $-0.5854$, $+0.3813$, $-0.9861\pm2.5949\,i$, matching APW; the
+decoupled stable eigenvalue equals the closed form $-2\sqrt{(A-B)/\pi}/\Is=-0.58539$.
+\emph{Regimes across $\Is_C$:} integration reproduces fluttering at $\Is=1.2190$ and tumbling at
+$1.2192$. \emph{Tolerance convergence:} the trajectory is Cauchy-convergent as tolerances tighten, and
+DOP853 and RK45 agree at tight tolerance. \emph{Lyapunov code:} verified on the logistic map
+($\lambda=\ln2=0.6931$ at $r=4$; the analytic period-two value $-0.9163$ at $r=3.2$) and the Lorenz
+system~\cite{lorenz63} ($\lmax=0.907$, a zero exponent, and the exact trace sum
+$\sum\lambda_i=-(\sigma+1+\beta)$); the 0--1 test returns $K\approx1$ for chaotic and $K\approx0$ for
+periodic logistic series. The full suite comprises $59$ automated tests.
+
+\section{Results}\label{sec:results}
+
+Table~\ref{tab:regimes} summarises the regime sequence and chaos diagnostics; the subsections give the
+detail.
+
+\begin{table}[htbp]
+\centering
+\caption{Regime bands versus $\Is$ with the two chaos diagnostics. The heteroclinic flutter--tumble
+transition is at $\Is_C\approx1.2191$; period-doublings occur at $\Is\approx1.474$ and $1.599$.}
+\label{tab:regimes}
+\begin{tabular}{lccc}
+\toprule
+$\Is$ range & Regime & $\lmax$ & median $K$ \\
+\midrule
+$[1.00, 1.20]$ & fluttering & $\approx 0$ & $\approx 0$ \\
+$[1.22, 1.47]$ & period-one tumbling & $\approx 0$ & $\approx 0$ \\
+$[1.47, 1.60]$ & period-two (flutter/tumble mixture) & $\approx 0$ & $\approx 0$ \\
+$[1.63, 2.83]$ & \textbf{chaotic} & up to $+0.140$ & $\approx 1$ \\
+$[2.85, 3.00]$ & small-amplitude broadside fluttering & $\approx 0$ & $\approx 0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Regime sequence}\label{sec:e1}
+
+A parallel sweep over $\Is\in[1.0,3.0]$ recovers an ordered sequence of regimes (Fig.~\ref{fig:e1}):
+fluttering for $\Is\lesssim1.2$; period-one tumbling from the heteroclinic transition at
+$\Is_C\approx1.2191$; a period-two band; an aperiodic (chaotic) band; and a return to small-amplitude
+broadside fluttering near $\Is=3.0$. The bifurcation diagram of the section angular velocity displays
+the expected structure---paired flutter branches, a single tumbling branch, a period-two split, a
+chaotic smear, and flutter again.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.84\linewidth]{e1_regime_map}
+\caption{Regime map versus $\Is$. Top: bifurcation diagram of the angular velocity on the $\theta=0$
+Poincar\'e section. Bottom: regime strip.}
+\label{fig:e1}
+\end{figure}
+
+\subsection{Chaos, confirmed by two diagnostics}\label{sec:e2}
+
+The maximal Lyapunov exponent is zero within numerical error ($|\lmax|<10^{-3}$) throughout the
+periodic bands and rises to a plateau of $0.12$--$0.14$ across $\Is\approx[1.63,2.83]$, peaking at
+$\lmax=+0.140$ at $\Is=2.2$; the independent Benettin estimate there is $0.137$, and the 0--1 test
+median $K$ jumps from $0$ to $\approx1$ over the same band (Fig.~\ref{fig:e2}). Requiring \emph{both}
+a robustly positive $\lmax$ and $K>0.5$ confirms chaos in $\Is\approx[1.63,2.83]$. The conjunction is
+essential: the 0--1 test alone produces spurious elevated $K$ at bifurcation points (transient
+artifacts that decay with longer sampling), and finite-time numerical noise produces sub-$10^{-3}$
+positive $\lmax$ in periodic bands; each diagnostic vetoes the other's false positives. The peak value
+is consistent with APW's reported $0.13\pm0.01$~\cite{apw91}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.84\linewidth]{e2_lyapunov}
+\caption{The chaos gate. Top: bifurcation backdrop. Middle: $\lmax(\Is)$ with uncertainty; the shaded
+region marks robustly positive $\lmax$. Bottom: median 0--1 indicator $K(\Is)$ (dashed line at
+$K=0.5$).}
+\label{fig:e2}
+\end{figure}
+
+\subsection{The route to chaos is not Feigenbaum}\label{sec:e3}
+
+Resolving the transition finely (event-located sections, integrator-precision return points) shows
+only \emph{two} successive period-doublings: period-1 $\to$ 2 at $\Is\approx1.474$ and 2 $\to$ 4 at
+$\Is\approx1.599$ (Fig.~\ref{fig:e3}). There is no period-eight; the period-four state gives way,
+across a narrow window ($\sim0.01$ in $\Is$), to chaos interspersed with periodic windows (period-3,
+-5, -6). Power spectra distinguish these: the window states show clean line spectra (commensurate
+harmonics of a single fundamental) whereas the ``many-branch'' states show a broadband floor identical
+to the chaotic control---i.e.\ weak chaos, not two incommensurate frequencies. There is thus no
+quasiperiodic (torus / Ruelle--Takens) route. Because a Feigenbaum ratio $\delta$ requires at least
+three successive doublings~\cite{feigenbaum78}, and only two are present, we do \emph{not} report a
+scaling exponent: doing so from two doublings would be unsupported. The route is best described as a
+truncated doubling ($1\to2\to4$) followed by a window-threaded transition to chaos.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.84\linewidth]{e3_route}
+\caption{Route to chaos. Top: fine bifurcation zoom on the $\theta=\pi$ section with the two detected
+doublings marked (dashed lines). Bottom: $\lmax(\Is)$ over the same window.}
+\label{fig:e3}
+\end{figure}
+
+\subsection{Landing-displacement sensitivity}\label{sec:e5}
+
+For ensembles of $N=200$ trajectories released from initial conditions perturbed by
+$\delta_0=10^{-6}$, we measure the standard deviation $\sigma$ of the horizontal displacement
+$\Delta x$ at fixed descent depth $D$ (with a grazing guard on the landing event; Fig.~\ref{fig:e5}).
+In the chaotic band $\sigma$ grows exponentially, by six to seven orders of magnitude over $D\le200$
+chords; in the regular bands it remains flat within noise, i.e.\ displacement is insensitive there
+(these regimes are attracting limit cycles, so perturbations decay---linear growth would require
+neutral dynamics).
+
+Measured directly in time, the growth rate $s_t\equiv\mathrm{d}(\log\sigma_x)/\mathrm{d}t$ equals the
+Lyapunov exponent to within ${\sim}10\%$ (Table~\ref{tab:e5}; mixed sign), consistent with
+$\log\sigma_x\approx\log\sigma_0+\lmax\,t$ to within the combined finite-time uncertainty of the two
+estimates (an $N=200$ bootstrap gives slope confidence intervals of width $\sim0.01$--$0.02$, and
+$\lmax$ itself carries a few-percent finite-time scatter). The corresponding fixed-depth comparison to
+$\lmax/U$, with $U$ the mean descent speed, is looser because it folds in a depth-dependent
+time-to-depth conversion. Beyond the exponential phase $\sigma$ continues to grow sub-linearly with
+$D$; a clean diffusive $\sqrt{D}$ asymptote is not isolated within the depths studied.
+
+\begin{table}[htbp]
+\centering
+\caption{Displacement-sensitivity growth in the chaotic band. $\sigma$ growth factor is over
+$D\le200$ chords; $s_t=\mathrm{d}(\log\sigma_x)/\mathrm{d}t$ is the exponential-phase rate in time;
+$\lmax$ is the variational value at $T=4000$. Regular controls $\Is=1.1,1.4$ show growth factors
+$\sim30$ (noise) and are flat.}
+\label{tab:e5}
+\begin{tabular}{ccccc}
+\toprule
+$\Is$ & $\sigma$ growth factor & $s_t$ & $\lmax$ & $s_t/\lmax$ \\
+\midrule
+$2.0$ & $3.3\times10^{6}$ & $0.130$ & $0.117$ & $1.11$ \\
+$2.2$ & $4.6\times10^{6}$ & $0.132$ & $0.143$ & $0.92$ \\
+$2.5$ & $1.2\times10^{7}$ & $0.115$ & $0.127$ & $0.90$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.96\linewidth]{e5_sensitivity}
+\caption{Landing-displacement spread. Left: $\sigma(D)$ (semilog) for chaotic (solid) and regular
+(dashed) $\Is$, with exponential-phase fits (dotted). Right: chaotic curves (log-log) against
+$\sqrt{D}$ and linear references.}
+\label{fig:e5}
+\end{figure}
+
+\subsection{No non-trivial multistability}\label{sec:e6}
+
+Up and down continuation sweeps of $\langle|\omega|\rangle$ coincide across $\Is\in[1.0,3.0]$: there
+is no hysteresis, including at the flutter--tumble transition (Fig.~\ref{fig:e6}). Basin sampling with
+random initial conditions finds a single attractor at every diagnostic $\Is$, inside the periodic
+windows and the chaotic band alike. The only multistability is the trivial
+clockwise/counter-clockwise reflection-symmetry pair (mirror spin directions with identical
+statistics). This rules out the possibility that the chaotic diagnostics reflect coexisting attractors
+rather than a single chaotic one.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.84\linewidth]{e6_multistability}
+\caption{Multistability probe. Top: up (filled) versus down (open) continuation of
+$\langle|\omega|\rangle$ versus $\Is$---the branches coincide (no hysteresis). Bottom: basin sampling
+(random initial conditions) at diagnostic $\Is$; a single cluster at each.}
+\label{fig:e6}
+\end{figure}
+
+\section{Discussion}\label{sec:discussion}
+
+The model possesses a genuine chaotic band, confirmed by independent methods and delimited more
+sharply than by regime inspection alone. Two aspects refine or depart from expectations. First, the
+\emph{route} is not the period-doubling cascade one might anticipate from the early doubling: a single
+robust doubling and a second, closely followed by a window-threaded transition, is a qualitatively
+different scenario for which Feigenbaum universality does not apply. Second, we find a clean
+operational link between a dynamical invariant and an observable of practical interest---the
+exponential rate of landing-position spread equals the Lyapunov exponent---while emphasising that the
+regular regimes are \emph{insensitive}, so the predictability of landing position depends
+discontinuously on $\Is$.
+
+We note one discrepancy with the source paper. APW's Fig.~3 reads period-two tumbling at $\Is=1.45$;
+in our integration this value is period-\emph{one} (the section state and revolution time are constant
+to $\sim10^{-12}$ across revolutions, and three distinct initial conditions converge to the same orbit
+with no bistability). The first doubling occurs here at $\Is\approx1.474$. We report this as a
+property of the model under our conventions rather than reconciling it by parameter adjustment; the
+initial conditions used for APW's figures are not specified, and small differences in the bifurcation
+location are plausible.
+
+\paragraph{Limitations.} The coefficients are phenomenological and the closure quasi-steady and
+two-dimensional; results outside the parameter range where that closure is credible should not be
+over-interpreted. The plate Lyapunov exponent is only moderately converged at attainable averaging
+times (a few-percent finite-time scatter), which sets the precision of the $\lmax$--sensitivity
+comparison. The diffusive tail of $\sigma(D)$ and the fine structure of the $[1.598,1.61]$ transition
+(intermittency versus crisis) remain open to deeper characterisation but do not affect the conclusions
+above.
+
+\section{Conclusions}\label{sec:conclusions}
+
+For the thin-card APW model with the standard coefficients, as $\Is$ increases the descent passes from
+fluttering through tumbling to a chaotic band at $\Is\approx[1.63,2.83]$ ($\lmax$ peak $+0.140$),
+confirmed by variational and Benettin Lyapunov exponents and the 0--1 test. The route is a truncated
+period-doubling (two doublings) followed by windowed chaos---not a Feigenbaum cascade and not a torus.
+Horizontal landing displacement is exponentially sensitive to release conditions in the chaotic band,
+at the Lyapunov rate, and insensitive elsewhere. The model exhibits no hysteresis and no non-trivial
+multistability. We additionally flag a period discrepancy with the source paper at $\Is=1.45$. Natural
+extensions are to resolve the $\sqrt{D}$ diffusive tail at larger fall depths and to classify the
+narrow $[1.598,1.61]$ transition zone in detail.
+
+\section*{Data and code availability}\label{sec:availability}
+All source code, experiment configurations, cached data with provenance sidecars, and the sources of
+this manuscript accompany the paper. \texttt{python run\_all.py} regenerates every figure (from cache
+or from scratch); \texttt{make paper} builds this document; and an automated test suite
+(\texttt{pytest}, $59$ tests) covers the physics and the diagnostics. The Feigenbaum stage is
+intentionally not run and is reported as the null result of Section~\ref{sec:e3}.
+
+\section*{Acknowledgements}
+The author conceived and directed this study, made all scientific decisions, verified the validation
+anchors, interpreted the results, and prepared this manuscript, and is solely responsible for its
+content. Software development and manuscript preparation were assisted by general-purpose AI tools;
+the author reviewed all code, results, and text. All results are reproducible from the accompanying
+code.
+
+\section*{Competing interests}
+The author declares no competing interests.
+
+\section*{Funding}
+This research received no external funding.
+
+\begin{thebibliography}{99}
+\bibitem{willmarth64} W.~W.~Willmarth, N.~E.~Hawk, R.~L.~Harvey,
+\emph{Steady and unsteady motions and wakes of freely falling disks},
+Phys.\ Fluids \textbf{7}, 197--208 (1964).
+\bibitem{field97} S.~B.~Field, M.~Klaus, M.~G.~Moore, F.~Nori,
+\emph{Chaotic dynamics of falling disks}, Nature \textbf{388}, 252--254 (1997).
+\bibitem{belmonte98} A.~Belmonte, H.~Eisenberg, E.~Moses,
+\emph{From flutter to tumble: inertial drag and Froude similarity in falling paper},
+Phys.\ Rev.\ Lett.\ \textbf{81}, 345--348 (1998).
+\bibitem{mahadevan99} L.~Mahadevan, W.~S.~Ryu, A.~D.~T.~Samuel,
+\emph{Tumbling cards}, Phys.\ Fluids \textbf{11}, 1--3 (1999).
+\bibitem{pw04} U.~Pesavento, Z.~J.~Wang,
+\emph{Falling paper: Navier--Stokes solutions, model of fluid forces, and center of mass elevation},
+Phys.\ Rev.\ Lett.\ \textbf{93}, 144501 (2004).
+\bibitem{apw91} A.~Andersen, U.~Pesavento, Z.~J.~Wang,
+\emph{Analysis of transitions between fluttering, tumbling and steady descent of falling cards},
+J.\ Fluid Mech.\ \textbf{541}, 91--104 (2005).
+\bibitem{apw65} A.~Andersen, U.~Pesavento, Z.~J.~Wang,
+\emph{Unsteady aerodynamics of fluttering and tumbling plates},
+J.\ Fluid Mech.\ \textbf{541}, 65--90 (2005).
+\bibitem{wbd04} Z.~J.~Wang, J.~M.~Birch, M.~H.~Dickinson,
+\emph{Unsteady forces and flows in low Reynolds number hovering flight: two-dimensional
+computations vs robotic wing experiments}, J.\ Exp.\ Biol.\ \textbf{207}, 449--460 (2004).
+\bibitem{gm04} G.~A.~Gottwald, I.~Melbourne,
+\emph{A new test for chaos in deterministic systems},
+Proc.\ R.\ Soc.\ Lond.\ A \textbf{460}, 603--611 (2004).
+\bibitem{gm09} G.~A.~Gottwald, I.~Melbourne,
+\emph{On the implementation of the 0--1 test for chaos},
+SIAM J.\ Appl.\ Dyn.\ Syst.\ \textbf{8}, 129--145 (2009).
+\bibitem{benettin80} G.~Benettin, L.~Galgani, A.~Giorgilli, J.-M.~Strelcyn,
+\emph{Lyapunov characteristic exponents for smooth dynamical systems and for Hamiltonian systems; a
+method for computing all of them}, Meccanica \textbf{15}, 9--30 (1980).
+\bibitem{lorenz63} E.~N.~Lorenz, \emph{Deterministic nonperiodic flow},
+J.\ Atmos.\ Sci.\ \textbf{20}, 130--141 (1963).
+\bibitem{feigenbaum78} M.~J.~Feigenbaum,
+\emph{Quantitative universality for a class of nonlinear transformations},
+J.\ Stat.\ Phys.\ \textbf{19}, 25--52 (1978).
+\end{thebibliography}
+
+\end{document}

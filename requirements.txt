@@ -1,0 +1,9 @@
+# Pinned to the actual install (Python 3.13.5, macOS arm64). See docs/decisions.md.
+numpy==2.5.3
+scipy==1.18.1
+matplotlib==3.11.2
+PyYAML==6.0.3
+joblib==1.6.0
+pandas==3.0.6
+pyarrow==25.0.1
+pytest==9.1.1
