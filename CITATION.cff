@@ -17,6 +17,14 @@ date-released: "2026-09-25"
 license: MIT
 url: "https://github.com/sub7an/falling-plate-chaos"
 repository-code: "https://github.com/sub7an/falling-plate-chaos"
+doi: "10.5281/zenodo.22967653"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.22967653"
+    description: "Concept DOI (all versions)"
+  - type: doi
+    value: "10.5281/zenodo.22967654"
+    description: "Version DOI (v1.0)"
 keywords:
   - falling plate
   - fluttering
@@ -26,9 +34,3 @@ keywords:
   - 0-1 test
   - route to chaos
   - nonlinear dynamics
-# After the Zenodo release mints a DOI, add it here, e.g.:
-# doi: "10.5281/zenodo.XXXXXXX"
-# identifiers:
-#   - type: doi
-#     value: "10.5281/zenodo.XXXXXXX"
-#     description: "Concept DOI (all versions)"

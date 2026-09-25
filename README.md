@@ -1,5 +1,8 @@
 # constantofchange — chaos in the 2D quasi-steady falling-plate model
 
+[![DOI](https://zenodo.org/badge/1388053043.svg)](https://doi.org/10.5281/zenodo.22967653)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Investigating whether the Andersen–Pesavento–Wang (2005) quasi-steady falling-plate model
 has a chaotic regime as the dimensionless moment of inertia **I\*** varies — and if so,
 where, by what route, and how sensitive landing displacement is to release conditions.
