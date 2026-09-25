@@ -77,3 +77,11 @@ validation anchors (fixed points, edge-on eigenvalues, the flutter/tumble transi
 Lyapunov code (on the logistic map and the Lorenz system), directed the rigor checks at every stage,
 and is responsible for all results and their interpretation. Every decision and correction is logged
 in `docs/decisions.md`.
+
+## Citing this work
+If you use this code or its results, please cite it via `CITATION.cff` (GitHub shows a "Cite this
+repository" button) or the archived DOI once the release is minted (see below).
+
+## License
+Code is released under the MIT License (`LICENSE`); the manuscript text and figures
+(`docs/paper.*`, `figures/*`) are under CC BY 4.0.

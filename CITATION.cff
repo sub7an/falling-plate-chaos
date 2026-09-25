@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite it as below."
+title: "Chaos, its route, and displacement sensitivity in the quasi-steady falling-plate model"
+abstract: >-
+  A validated computational study of the two-dimensional quasi-steady falling-plate model
+  (Andersen, Pesavento & Wang, 2005) in its thin-card limit: confirmation and delimitation of a
+  chaotic band, characterisation of the (non-Feigenbaum) route to chaos, a quantitative link
+  between the Lyapunov exponent and landing-displacement sensitivity, and the absence of
+  multistability.
+type: software
+authors:
+  - family-names: Rao
+    given-names: "M. Subhan"
+    orcid: "https://orcid.org/0009-0004-4547-141X"
+version: "1.0"
+date-released: "2026-09-25"
+license: MIT
+url: "https://github.com/sub7an/falling-plate-chaos"
+repository-code: "https://github.com/sub7an/falling-plate-chaos"
+keywords:
+  - falling plate
+  - fluttering
+  - tumbling
+  - deterministic chaos
+  - Lyapunov exponent
+  - 0-1 test
+  - route to chaos
+  - nonlinear dynamics
+# After the Zenodo release mints a DOI, add it here, e.g.:
+# doi: "10.5281/zenodo.XXXXXXX"
+# identifiers:
+#   - type: doi
+#     value: "10.5281/zenodo.XXXXXXX"
+#     description: "Concept DOI (all versions)"
